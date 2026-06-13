@@ -29,36 +29,27 @@ This project demonstrates a distributed, cloud-native monitoring infrastructure 
 
 ## 📐 System Architecture & Data Flow
 
-The monitoring infrastructure operates on a **Pull-Based** telemetry model, where the centralized Prometheus server continuously scrapes endpoints exposed by Node Exporters across different network spaces.
+The monitoring infrastructure operates on a Pull-Based telemetry model, where the centralized Prometheus server continuously scrapes endpoints exposed by Node Exporters across different network spaces.
 
-┌─────────────────────────────────────────────────────────────────┐
-│                       Distributed Targets                       │
-│                                                                 │
-│   ┌───────────────────────────┐   ┌─────────────────────────┐   │
-│   │ node-exporter-host (WSL2) │   │   ubuntu-vm (Hyper-V)   │   │
-│   └─────────────┬─────────────┘   └────────────┬────────────┘   │
-│                 │ :9100/metrics                │ :9100/metrics  │
-└─────────────────┼──────────────────────────────┼────────────────┘
-│                              │
-└──────────────┬───────────────┘
-│ (Scrape Every 5s)
-┌────────▼────────┐
-│ Prometheus TSDB │ (:9090)
-└────────┬────────┘
-│
-┌────────▼────────┐
-│Grafana Dashboard│ (:3000)
-└────────┬────────┘
-│ (Alert Rule Triggered: node_load1 > 1.1)
-┌────────▼────────┐
-│Telegram Bot API │
-└────────┬────────┘
-│ (Instant Push)
-┌────────▼────────┐
-│  System Admin   │ (Firing / Resolved Notifications)
-└─────────────────┘
-
----
+  1. Distributed Targets (Data Sources):
+    
+    node-exporter-host (WSL2) ─── (Port: 9100/metrics) ───► Centralized Pipeline
+    
+    ubuntu-vm (Hyper-V) ─────── (Port: 9100/metrics) ───► Centralized Pipeline
+  
+  2. Centralized Core Stack:
+    
+    Prometheus TSDB (:9090): Scrapes all targets concurrently every 5 seconds.
+    
+    Grafana Dashboard (:3000): Connects to Prometheus to visualize real-time database queries.
+  
+  3. Alert & Notification Pipeline:
+  
+    Grafana Alerting Engine: Triggers instantly when the threshold is violated (node_load1 > 1.1).
+    
+    Telegram Bot API: Receives webhook payload and performs an instant push routing.
+    
+    System Administrator: Receives real-time Firing and Resolved notifications on smart devices.
 
 ## ⚙️ Configuration & Deployment
 
